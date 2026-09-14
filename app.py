@@ -163,4 +163,4 @@ if st.session_state["generated_content"]:
         cols = st.columns(len(st.session_state["matched_images"]))
         for i, img_url in enumerate(st.session_state["matched_images"]):
             with cols[i]:
-                st.image(img_url, caption=f"이미지 {i+1}", use_column_width=True)
+                st.image(img_url, caption=f"이미지 {i+1}", use_container_width=True)
