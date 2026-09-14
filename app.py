@@ -15,20 +15,24 @@ st.set_page_config(
 st.title("💰 구글 블로그스팟 수익화 자동화 머신 (V2)")
 st.markdown("Gemini Flash 기반 / 정보성 키워드 타겟 / Unsplash 자동 이미지 매칭 및 SEO 최적화")
 
-# API 키 설정 (사이드바)
+# API 키 설정 (스트리밋 시크릿에서 자동 로드)
 with st.sidebar:
     st.header("🔑 API 설정")
-    api_key_input = st.text_input("Google Gemini API Key", type="password", value=os.environ.get("GEMINI_API_KEY", ""))
+    
+    # st.secrets에서 자동으로 가져오고, 혹시 없으면 빈 칸으로 두기
+    default_gemini_key = st.secrets.get("GEMINI_API_KEY", "")
+    default_unsplash_key = st.secrets.get("UNSPLASH_ACCESS_KEY", "")
+
+    api_key_input = st.text_input("Google Gemini API Key", type="password", value=default_gemini_key)
     if api_key_input:
         os.environ["GEMINI_API_KEY"] = api_key_input
-        st.success("Gemini API Key 설정 완료!")
+        st.success("Gemini API Key 자동 연동 완료!")
     else:
-        st.warning("Google AI Studio API Key를 입력해주세요.")
+        st.warning("Streamlit Secrets에 Gemini API Key를 등록해주세요.")
         
     st.markdown("---")
-    st.markdown("### 🖼️ Unsplash 이미지 API (선택)")
-    unsplash_key = st.text_input("Unsplash Access Key", type="password", help="이미지 자동 검색용 (없어도 텍스트 가이드는 작동합니다)")
-
+    st.markdown("### 🖼️ Unsplash 이미지 API")
+    unsplash_key = st.text_input("Unsplash Access Key", type="password", value=default_unsplash_key)
 # 세션 스테이트 초기화
 if "generated_content" not in st.session_state:
     st.session_state["generated_content"] = ""
