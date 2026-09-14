@@ -109,16 +109,16 @@ if generate_btn:
         
         try:
             client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-            model_name = "gemini-3.6-flash"  # 안정적인 최신 플래시 모델 명칭 적용
+            model_name = "gemini-3.6-flash"  # 최신 모델 적용
             
             # 1. Unsplash 이미지 자동 수급
-            progress_text.text("🖼️ [1단계] Unsplash에서 관련 고화질 이미지를 탐색 중...")
+            progress_text.text("🖼️ [1단계] Unsplash에서 관련 고화질 이미지를 탐색 중입니다...")
             images = fetch_unsplash_images(target_keyword, unsplash_key)
             st.session_state["matched_images"] = images
             
             img_guide = "\n".join([f"- 이미지 URL {i+1}: {url}" for i, url in enumerate(images)]) if images else "Unsplash API 키 미입력 (텍스트 내 이미지 가이드로 대체)"
 
-            # 2. 본문 생성 에이전트
+            # 2. 본문 생성 에이전트 (AI스러운 마크다운 기호 제거 요청 반영)
             progress_text.text("✍️ [2단계] 라이터 에이전트가 구글 SEO 맞춤형 정보성 글을 작성 중입니다...")
             
             base_prompt = f"""
@@ -131,9 +131,12 @@ if generate_btn:
             {img_guide}
 
             위 조건을 바탕으로, 구글 애드센스 승인 및 검색 상위 노출(SEO)에 최적화된 블로그 본문을 작성해 줘.
-            - H2, H3 소제목을 적극 활용할 것.
-            - 가독성이 좋게 핵심 내용은 불릿 포인트나 표 형태로 정리할 것.
-            - 본문 중간중간 적절한 위치에 확보된 이미지 소스의 URL을 마크다운 이미지 형식(![](URL))으로 삽입할 것.
+            
+            [중요 작성 규칙 - AI 티 안 나게 쓰기]:
+            1. '##', '###' 같은 마크다운 소제목 기호나 '**' 같은 강조 기호는 절대로 사용하지 말 것.
+            2. 대신 자연스러운 줄바꿈과 빈 줄, 그리고 이모지(💡, ✅ 등)를 적절히 활용하여 사람이 직접 쓴 블로그 포스팅처럼 가독성 있게 작성할 것.
+            3. 핵심 내용은 깔끔한 기호(예: -, ㆍ)나 번호 매기기로 정리할 것.
+            4. 본문 중간중간 적절한 위치에 확보된 이미지 소스의 URL을 일반적인 링크 형태나 보기 편한 텍스트 형태로 삽입할 것.
             """
             
             body_response = client.models.generate_content(model=model_name, contents=base_prompt)
@@ -163,4 +166,5 @@ if st.session_state["generated_content"]:
         cols = st.columns(len(st.session_state["matched_images"]))
         for i, img_url in enumerate(st.session_state["matched_images"]):
             with cols[i]:
+                # 에러 유발하던 옛날 옵션 제거 및 최신 표준 반영
                 st.image(img_url, caption=f"이미지 {i+1}", use_container_width=True)
