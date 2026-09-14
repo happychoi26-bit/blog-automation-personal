@@ -118,7 +118,7 @@ if generate_btn:
         
         try:
             client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-            model_name = "gemini-2.5-flash"
+            model_name = "gemini-3.6-flash"
             
             # 1. Unsplash 이미지 자동 수급
             progress_text.text("🖼️ [1단계] Unsplash에서 관련 고화질 이미지를 탐색 중입니다...")
