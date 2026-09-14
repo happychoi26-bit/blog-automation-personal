@@ -2,18 +2,19 @@ import os
 import requests
 import streamlit as st
 from google import genai
+from google.genai import types
 
 # -------------------------------------------------------------
 # 0. 페이지 설정 및 초기화
 # -------------------------------------------------------------
 st.set_page_config(
-    page_title="구글 애드센스 수익화 블로그 공장",
+    page_title="구글 애드센스 수익화 블로그 공장 (V2.5 실시간 리서치)",
     page_icon="💰",
     layout="wide"
 )
 
-st.title("💰 구글 블로그스팟 수익화 자동화 머신 (V2)")
-st.markdown("Gemini Flash 기반 / 정보성 키워드 타겟 / Unsplash 자동 이미지 매칭 및 SEO 최적화")
+st.title("💰 구글 블로그스팟 수익화 자동화 머신 (V2.5 실시간 트렌드 리서치)")
+st.markdown("Gemini Flash + Google Search Grounding / 실시간 웹 리서치 / Unsplash 자동 이미지 / 프로 SEO")
 
 # API 키 설정 (스트리밋 시크릿에서 자동 로드)
 with st.sidebar:
@@ -86,7 +87,7 @@ with tab_main:
     st.subheader("2. 추가 강조사항 (Custom Prompt)")
     custom_prompt = st.text_area(
         "본문에 꼭 포함했으면 하는 내용이나 주의사항을 적어주세요",
-        placeholder="예: 신청 기한이 얼마 안 남았다는 점을 강조하고, 핵심 요약을 서두에 배치해 줘.",
+        placeholder="예: 신청 기한이 얼마 안 남았다는 점을 강조하고, 최신 2026년 기준 변경 사항을 반영해 줘.",
         height=100
     )
 
@@ -102,10 +103,10 @@ with tab_seo:
         st.info("💡 아직 분석 리포트가 없습니다. '키워드 및 본문 생성' 탭에서 글을 먼저 생성해주세요!")
 
 # -------------------------------------------------------------
-# 3. AI 파이프라인 가동 버튼
+# 3. AI 파이프라인 가동 버튼 (실시간 웹 리서치 + 본문 + SEO)
 # -------------------------------------------------------------
 st.markdown("---")
-generate_btn = st.button("🚀 애드센스 최적화 블로그 글 생성하기", type="primary", use_container_width=True)
+generate_btn = st.button("🚀 실시간 리서치 + 애드센스 최적화 블로그 글 생성하기", type="primary", use_container_width=True)
 
 if generate_btn:
     if not api_key_input:
@@ -126,8 +127,8 @@ if generate_btn:
             
             img_guide = "\n".join([f"- 이미지 URL {i+1}: {url}" for i, url in enumerate(images)]) if images else "Unsplash API 키 미입력 (텍스트 내 이미지 가이드로 대체)"
 
-            # 2. 본문 생성 에이전트
-            progress_text.text("✍️ [2단계] 라이터 에이전트가 구글 SEO 맞춤형 본문과 메타데이터를 작성 중입니다...")
+            # 2. 실시간 웹 리서치 및 본문 생성 (Google Search Grounding 활성화)
+            progress_text.text("🌐 [2단계] 구글 실시간 검색(Search Grounding)을 통해 최신 트렌드와 정보를 리서치 후 집필 중입니다...")
             
             base_prompt = f"""
             [메인 키워드]: {target_keyword}
@@ -139,6 +140,7 @@ if generate_btn:
             {img_guide}
 
             위 조건을 바탕으로 구글 애드센스 승인 및 검색 상위 노출(SEO)에 최적화된 블로그 포스팅을 작성해 줘.
+            반드시 최신 웹 검색 결과를 반영하여 정확하고 신뢰도 높은 최신 정보(2026년 기준)를 포함해 작성할 것.
             
             [중요 작성 규칙]:
             1. '##', '###' 같은 마크다운 소제목 기호나 '**' 같은 강조 기호는 절대로 사용하지 말 것.
@@ -152,7 +154,16 @@ if generate_btn:
             [METADATA_END]
             """
             
-            body_response = client.models.generate_content(model=model_name, contents=base_prompt)
+            # 구글 실시간 검색 툴(Google Search) 장착 옵션 설정
+            config = types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+            
+            body_response = client.models.generate_content(
+                model=model_name, 
+                contents=base_prompt,
+                config=config
+            )
             full_text = body_response.text
 
             # 본문과 메타데이터 분리 파싱
@@ -171,7 +182,7 @@ if generate_btn:
                 st.session_state["meta_desc"] = "정보성 블로그 포스팅입니다."
                 st.session_state["blog_tags"] = target_keyword
 
-            # 3. 전문 SEO 분석 에이전트 (프로급 프롬프트 장착)
+            # 3. 프로 SEO 분석 에이전트
             progress_text.text("📊 [3단계] 프로 SEO 에이전트가 구글 알고리즘 기준으로 깐깐하게 채점 중입니다...")
             
             seo_expert_prompt = f"""
@@ -185,7 +196,7 @@ if generate_btn:
             [반드시 포함해야 할 채점 항목 및 평가 기준]:
             1. 키워드 최적화 점수 (30점 만점): 서두 100자 이내에 메인 키워드가 포함되었는지, 본문 내 키워드 밀도가 적정한지 평가.
             2. 구조 및 가독성 점수 (30점 만점): AI 티 나는 마크다운 기호 없이 단락이 깔끔하게 나뉘었는지, 리스트나 기호 정리가 잘 되었는지 평가.
-            3. 애드센스 승인 적합도 (40점 만점): 사용자에게 실질적인 정보(조건, 방법, 주의사항 등)를 제공하는 퀄리티 높은 글인지 평가.
+            3. 애드센스 승인 적합도 (40점 만점): 사용자에게 실질적인 정보(조건, 방법, 최신성 등)를 제공하는 퀄리티 높은 글인지 평가.
             
             [출력 형식]:
             - 총점 (100점 만점)
@@ -197,7 +208,7 @@ if generate_btn:
             st.session_state["seo_report"] = seo_response.text
             
             progress_text.empty()
-            st.success("🎉 전문 SEO 분석이 포함된 블로그 패키지 생성이 완료되었습니다!")
+            st.success("🎉 실시간 웹 리서치와 SEO 분석이 완료된 고품질 블로그 패키지가 생성되었습니다!")
             
         except Exception as e:
             progress_text.empty()
