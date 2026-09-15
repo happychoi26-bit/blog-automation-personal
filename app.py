@@ -1,5 +1,4 @@
 import os
-import requests
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -8,20 +7,19 @@ from google.genai import types
 # 0. 페이지 설정 및 초기화
 # -------------------------------------------------------------
 st.set_page_config(
-    page_title="구글 애드센스 수익화 블로그 공장 (V2.6)",
+    page_title="구글 애드센스 수익화 블로그 공장 (V2.7)",
     page_icon="💰",
     layout="wide"
 )
 
-st.title("💰 구글 블로그스팟 수익화 자동화 머신 (V2.6 실시간 트렌드 리서치)")
-st.markdown("Gemini 3.6 Flash + Google Search Grounding / 4회 키워드 최적화 / 모바일 엔터 최적화")
+st.title("💰 구글 블로그스팟 수익화 자동화 머신 (V2.7 실시간 트렌드 리서치)")
+st.markdown("Gemini 3.6 Flash + Google Search Grounding / 4회 키워드 최적화 / 수동 이미지 맞춤형")
 
 # API 키 설정 (스트리밋 시크릿에서 자동 로드)
 with st.sidebar:
     st.header("🔑 API 설정")
     
     default_gemini_key = st.secrets.get("GEMINI_API_KEY", "")
-    default_unsplash_key = st.secrets.get("UNSPLASH_ACCESS_KEY", "")
 
     api_key_input = st.text_input("Google Gemini API Key", type="password", value=default_gemini_key)
     if api_key_input:
@@ -29,10 +27,6 @@ with st.sidebar:
         st.success("Gemini API Key 자동 연동 완료!")
     else:
         st.warning("Streamlit Secrets에 Gemini API Key를 등록해주세요.")
-        
-    st.markdown("---")
-    st.markdown("### 🖼️ Unsplash 이미지 API")
-    unsplash_key = st.text_input("Unsplash Access Key", type="password", value=default_unsplash_key)
 
 # 세션 스테이트 초기화
 if "generated_content" not in st.session_state:
@@ -43,29 +37,9 @@ if "meta_desc" not in st.session_state:
     st.session_state["meta_desc"] = ""
 if "blog_tags" not in st.session_state:
     st.session_state["blog_tags"] = ""
-if "matched_images" not in st.session_state:
-    st.session_state["matched_images"] = []
 
 # -------------------------------------------------------------
-# 1. Unsplash 이미지 자동 검색 함수
-# -------------------------------------------------------------
-def fetch_unsplash_images(query: str, client_key: str):
-    if not client_key:
-        return []
-    url = "https://api.unsplash.com/search/photos"
-    headers = {"Authorization": f"Client-ID {client_key}"}
-    params = {"query": query, "per_page": 3, "lang": "ko"}
-    try:
-        res = requests.get(url, headers=headers, params=params)
-        if res.status_code == 200:
-            results = res.json().get("results", [])
-            return [img["urls"]["regular"] for img in results]
-    except Exception:
-        pass
-    return []
-
-# -------------------------------------------------------------
-# 2. 3단 탭(Tab) UI 구성
+# 1. 3단 탭(Tab) UI 구성
 # -------------------------------------------------------------
 tab_main, tab_style, tab_seo = st.tabs([
     "📝 키워드 및 본문 생성", 
@@ -114,7 +88,7 @@ with tab_seo:
         st.info("💡 아직 분석 리포트가 없습니다. '키워드 및 본문 생성' 탭에서 글을 먼저 생성해주세요!")
 
 # -------------------------------------------------------------
-# 3. AI 파이프라인 가동 버튼 (실시간 웹 리서치 + 본문 + SEO)
+# 2. AI 파이프라인 가동 버튼 (실시간 웹 리서치 + 본문 + SEO)
 # -------------------------------------------------------------
 st.markdown("---")
 generate_btn = st.button("🚀 실시간 리서치 + 애드센스 최적화 블로그 글 생성하기", type="primary", use_container_width=True)
@@ -131,15 +105,8 @@ if generate_btn:
             client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
             model_name = "gemini-3.6-flash"
             
-            # 1. Unsplash 이미지 자동 수급
-            progress_text.text("🖼️ [1단계] Unsplash에서 관련 고화질 이미지를 탐색 중입니다...")
-            images = fetch_unsplash_images(target_keyword, unsplash_key)
-            st.session_state["matched_images"] = images
-            
-            img_guide = "\n".join([f"- 이미지 URL {i+1}: {url}" for i, url in enumerate(images)]) if images else "Unsplash API 키 미입력 (텍스트 내 이미지 가이드로 대체)"
-
-            # 2. 실시간 웹 리서치 및 본문 생성 (Google Search Grounding 활성화)
-            progress_text.text("🌐 [2단계] 구글 실시간 검색(Search Grounding)으로 최신 트렌드를 팩트체크 후 집필 중입니다...")
+            # 실시간 웹 리서치 및 본문 생성 (Google Search Grounding 활성화)
+            progress_text.text("🌐 구글 실시간 검색(Search Grounding)으로 최신 트렌드를 팩트체크 후 집필 중입니다...")
             
             base_prompt = f"""
             [메인 키워드]: {target_keyword}
@@ -148,8 +115,6 @@ if generate_btn:
             [키워드 4회 배치 전략]: {keyword_strategy}
             [사용자 추가 요청]: {custom_prompt if custom_prompt else "없음"}
             [말투 참고]: {my_tone_sample if my_tone_sample else "자연스러운 정보성 블로그 후기체"}
-            [확보된 이미지 소스]:
-            {img_guide}
 
             위 조건을 바탕으로 구글 애드센스 승인 및 검색 상위 노출(SEO)에 최적화된 블로그 포스팅을 작성해 줘.
             반드시 구글 실시간 검색 결과를 바탕으로 철저한 팩트체크를 거쳐 정확하고 신뢰도 높은 최신 정보를 포함할 것.
@@ -195,8 +160,8 @@ if generate_btn:
                 st.session_state["meta_desc"] = "정보성 블로그 포스팅입니다."
                 st.session_state["blog_tags"] = target_keyword
 
-            # 3. 프로 SEO 분석 에이전트
-            progress_text.text("📊 [3단계] 프로 SEO 에이전트가 키워드 4회 배치 상태와 구글 알고리즘 기준으로 채점 중입니다...")
+            # 프로 SEO 분석 에이전트
+            progress_text.text("📊 프로 SEO 에이전트가 키워드 4회 배치 상태와 구글 알고리즘 기준으로 채점 중입니다...")
             
             seo_expert_prompt = f"""
             너는 15년 경력의 구글 검색 알고리즘(SEO) 및 애드센스 최적화 전문가야.
@@ -239,10 +204,3 @@ if st.session_state["generated_content"]:
         st.text_input("🏷️ 복사해서 넣을 [라벨 (태그)]", value=st.session_state.get("blog_tags", ""))
 
     st.text_area("📄 블로그 본문 출력 (복사해서 블로그스팟에 붙여넣으세요)", value=st.session_state["generated_content"], height=400)
-    
-    if st.session_state["matched_images"]:
-        st.subheader("🖼️ 본문에 자동 매칭된 고화질 이미지 미리보기")
-        cols = st.columns(len(st.session_state["matched_images"]))
-        for i, img_url in enumerate(st.session_state["matched_images"]):
-            with cols[i]:
-                st.image(img_url, caption=f"이미지 {i+1}", use_container_width=True)
