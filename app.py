@@ -97,7 +97,7 @@ with tab_seo:
             with st.spinner("프로 SEO 에이전트가 모바일 가독성과 키워드 배치를 검수 중입니다..."):
                 try:
                     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-                    model_name = "gemini-2.5-flash"
+                    model_name = "gemini-3.6-flash"
                     
                     seo_expert_prompt = f"""
                     너는 15년 경력의 구글 검색 알고리즘(SEO) 및 애드센스 최적화 전문가야.
@@ -144,7 +144,7 @@ if generate_btn:
         
         try:
             client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-            model_name = "gemini-2.5-flash"
+            model_name = "gemini-3.6-flash"
             
             progress_text.text("🌐 구글 실시간 검색(Search Grounding)으로 최신 트렌드를 팩트체크 후 모바일 최적화 집필 중입니다...")
             
