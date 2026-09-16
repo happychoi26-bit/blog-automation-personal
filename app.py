@@ -7,13 +7,13 @@ from google.genai import types
 # 0. 페이지 설정 및 초기화
 # -------------------------------------------------------------
 st.set_page_config(
-    page_title="구글 애드센스 수익화 블로그 공장 (V2.9)",
+    page_title="구글 애드센스 수익화 블로그 공장 (V2.10 경량화)",
     page_icon="💰",
     layout="wide"
 )
 
-st.title("💰 구글 블로그스팟 수익화 자동화 머신 (V2.9 SEO 분석 분리형)")
-st.markdown("Gemini 3.6 Flash + Google Search Grounding / 키워드 최적화 / 429 에러 방지 분리형 구조")
+st.title("💰 구글 블로그스팟 수익화 자동화 머신 (V2.10 경량화 429 에러 방지)")
+st.markdown("Gemini 3.6 Flash / 검색 그라운딩 제거 및 토큰 최적화 분리형 구조")
 
 # API 키 설정 (스트리밋 시크릿에서 자동 로드)
 with st.sidebar:
@@ -85,7 +85,6 @@ with tab_style:
 with tab_seo:
     st.subheader("📊 SEO 분석 및 구글 상위 노출 점검")
     
-    # SEO 분석을 따로 실행하는 버튼
     seo_btn = st.button("📊 생성된 본문 SEO 분석 실행하기", type="secondary")
     
     if seo_btn:
@@ -110,7 +109,7 @@ with tab_seo:
                     [반드시 포함해야 할 채점 항목 및 평가 기준]:
                     1. 키워드 4회 최적 분산 점수 (30점 만점): 메인 키워드가 본문 전체에 걸쳐 정확히 4회 자연스럽게 녹아들었는지 검증.
                     2. 모바일 가독성 및 줄바꿈 점수 (30점 만점): 마크다운 없이 모바일에서 읽기 좋게 1~2줄마다 줄바꿈이 시원하게 잘 적용되었는지 평가.
-                    3. 애드센스 승인 적합도 (40점 만점): 최신 팩트체크를 바탕으로 사용자에게 실질적인 가치를 제공하는 글인지 평가.
+                    3. 애드센스 승인 적합도 (40점 만점): 사용자에게 실질적인 가치를 제공하는 글인지 평가.
                     
                     [출력 형식]:
                     - 총점 (100점 만점)
@@ -129,10 +128,10 @@ with tab_seo:
         st.markdown(st.session_state["seo_report"])
 
 # -------------------------------------------------------------
-# 2. 본문 생성 버튼 (실시간 웹 리서치 + 본문)
+# 2. 본문 생성 버튼 (경량화된 순수 텍스트 생성)
 # -------------------------------------------------------------
 st.markdown("---")
-generate_btn = st.button("🚀 1단계: 실시간 리서치 + 애드센스 최적화 블로그 글 생성하기", type="primary", use_container_width=True)
+generate_btn = st.button("🚀 1단계: 애드센스 최적화 블로그 글 생성하기 (경량화)", type="primary", use_container_width=True)
 
 if generate_btn:
     if not api_key_input:
@@ -146,7 +145,7 @@ if generate_btn:
             client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
             model_name = "gemini-3.6-flash"
             
-            progress_text.text("🌐 구글 실시간 검색(Search Grounding)으로 최신 트렌드를 팩트체크 후 모바일 최적화 집필 중입니다...")
+            progress_text.text("✍️ Gemini 3.6 모델이 모바일 최적화 블로그 본문을 집필 중입니다...")
             
             base_prompt = f"""
             [메인 키워드]: {target_keyword}
@@ -157,7 +156,6 @@ if generate_btn:
             [말투 참고]: {my_tone_sample if my_tone_sample else "자연스러운 정보성 블로그 후기체"}
 
             위 조건을 바탕으로 구글 애드센스 승인 및 검색 상위 노출(SEO)에 최적화된 블로그 포스팅을 작성해 줘.
-            반드시 구글 실시간 검색 결과를 바탕으로 철저한 팩트체크를 거쳐 정확하고 신뢰도 높은 최신 정보를 포함할 것.
             
             [매우 중요한 모바일 가독성 및 작성 규칙]:
             1. 메인 키워드('{target_keyword}')가 전체 글에서 정확히 총 **4회** 들어가도록 계산해서 배치할 것. (선택된 배치 전략 준수)
@@ -172,14 +170,10 @@ if generate_btn:
             [METADATA_END]
             """
             
-            config = types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())]
-            )
-            
+            # [수정 포인트] 무거운 tools=[types.Tool(google_search=...)] 파라미터를 완전히 제거하여 토큰/할당량 소모를 최소화함
             body_response = client.models.generate_content(
                 model=model_name, 
-                contents=base_prompt,
-                config=config
+                contents=base_prompt
             )
             full_text = body_response.text
 
@@ -203,7 +197,7 @@ if generate_btn:
             st.session_state["seo_report"] = "" # 새 글을 쓰면 기존 SEO 리포트 초기화
             
             progress_text.empty()
-            st.success("🎉 모바일 가독성과 팩트체크가 완벽히 적용된 블로그 본문이 생성되었습니다! 'SEO 분석' 탭에서 분석을 진행할 수 있습니다.")
+            st.success("🎉 모바일 가독성이 적용된 블로그 본문이 생성되었습니다! 'SEO 분석' 탭에서 분석을 진행할 수 있습니다.")
             
         except Exception as e:
             progress_text.empty()
